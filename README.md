@@ -33,29 +33,28 @@ One of them is choosing GraphQL, which has a couple of drawbacks, such as its ex
 
 Another tradeoff was going with ORM instead of native queries or some more lightweight solution. In my opinion, in case of such a system, using native queries would be a no-go - the level of query optimization that I can reach with Prisma is more than enough for the use cases listed in the requirements. Prisma comes with the drawback that it limits the usable DBs to the supported ones only - which are the most widely used databases, so we would probably anyway choose one of those. Again, its benefits overshadow its drawbacks, so the tradeoff is acceptable.
 
-3. Given more time, what improvements or optimizations would you want to add?
-   When would you add them?
+## Given more time, what improvements or optimizations would you want to add? When would you add them?
 
 Here I have many things to say, so I open another level of listing.
 
 - Local DevEx / Continuous Development features:
-  The local development setup is quite laggy at the moment. For example, I didn't use Prisma Migrate - in my opinion, it is quite an important piece of the toolchain. Also, there is no command that starts a proper development environment without dependencies (for `dev`, I need a running database). The docker-based setup is also quite half-ready. Additionally, a development environment for a team seeking high quality would include static code analysis, CI/CD pipeline with automated test execution, GraphQL schema checks and what not. _When_: I would add these incrementally as the project is growing, but most of the mentioned things should be configured at an early stage of the project.
+  The local development setup is quite laggy at the moment. For example, I didn't use Prisma Migrate - in my opinion, it is quite an important piece of the toolchain. Also, there is no command that starts a proper development environment without dependencies (for `dev`, I need a running database). The docker-based setup is also quite half-ready. Additionally, a development environment for a team seeking high quality would include static code analysis, CI/CD pipeline with automated test execution, GraphQL schema checks and what not. **When**: I would add these incrementally as the project is growing, but most of the mentioned things should be configured at an early stage of the project.
 
 - Auth, Access Control:
-  Currently there is no authentication and access control defined for this service. As I see it, receiving and decoding an access token shouldn't happen in this microservice. It could be done by a serparate service that is responsible for user management, or as part of our API Gateway (in case of Apollo, it could be a Rhai script or an external co-processor). The service itself should be responsible for handling its own permission scopes, so it should indeed know what are the capabilities of the user making the given request. _When_: this should be done before publishing the service to prod.
+  Currently there is no authentication and access control defined for this service. As I see it, receiving and decoding an access token shouldn't happen in this microservice. It could be done by a serparate service that is responsible for user management, or as part of our API Gateway (in case of Apollo, it could be a Rhai script or an external co-processor). The service itself should be responsible for handling its own permission scopes, so it should indeed know what are the capabilities of the user making the given request. **When**: this should be done before publishing the service to prod.
 
 - Rate limitation:
-  This could probably be done outside of this service, but GraphQL implies some extra risks here as well - without proper operation limits, the one malicious user can overload the server even with a single request (by a too long or too deep one). Rules for this can be configured at the Apollo Router's config (the Gateway we would put the subgraphs behind), but Cloudflare also offers a similar service.
+  This could probably be done outside of this service, but GraphQL implies some extra risks here as well - without proper operation limits, the one malicious user can overload the server even with a single request (by a too long or too deep one). Rules for this can be configured at the Apollo Router's config (the Gateway we would put the subgraphs behind), but Cloudflare also offers a similar service. **When**: as it is a security aspect, it should be considered from the very beginning, but probably it is mostly done outside of this service.
 
 - Nexus:
-  I've honestly never used Nexus for the schema definitions yet, but I think it would be a nice improvement because of its extra type safety (and I also think using actual code is better than any form of string, even if the IDE extensions make it readable).
+  I've honestly never used Nexus for the schema definitions yet, but I think it would be a nice improvement because of its extra type safety (and I also think using actual code is better than any form of string, even if the IDE extensions make it readable). **When**: the earlier we add it, the easier it gets (as we don't need to rewrite existing schema). But it is not a top-priority and we can add it service by service.
 
 - More queries, mutations, pagination, filtering, etc:
-  The current API basically implements the requirements from the specification, but APIs should be a bit more general-purpose. To support this, it would be nice to implement all the required CRUD operations (Update, Delete), convenience features such as pagination, sorting and filtering.
+  The current API basically implements the requirements from the specification, but APIs should be a bit more general-purpose. To support this, it would be nice to implement all the required CRUD operations (Update, Delete), convenience features such as pagination, sorting and filtering. **When**: as the usage increases, the API can get more and more mature and optimized.
 
-4. What would you need to do to make this application scale to hundreds of thousands of users?
+## What would you need to do to make this application scale to hundreds of thousands of users?
 
-I would like to approach this topic from two separate angles: primary and secondary measures.
+I would like to approach this topic from two separate angles: **primary** and **secondary measures**.
 
 The primary measures are around the direct scalability of this service itself. So, given some hundreds of thousands of users, assuming that all of them are active and all of their requests trigger actual data fetches, the service should still operate efficiently.
 
@@ -67,7 +66,7 @@ To achieve this, we need to _deploy it in a scaleable way_. As Node.js is single
 
 Which option is the best? It highly depends on the requirements and other details of our solution. For example, with the imagined setup with Apollo Router and more subgraphs, Kubernetes is quite handy as we can configure the networking between the services to the lowest possible latency. But of course, it is also possible to implement all subgraphs as separate function deployments.
 
-Besides scaling the app, we should also primarily deal with scaling the database. When we have an upscaled situation, we have to think about the increased number of database connections. It can go quite extreme in case of Serverless setup, as by default, the on-the-fly execution introduces a fresh DB connection each and every time - connection pooling is a good measure for this. Also, we have to investigate the most popular query patterns and create indexes to reduce latency and therefore increase DB availability. Introducing read replicas, or sharding are also great measures for preparing the database for massive load.
+Besides **scaling the app**, we should also primarily deal with **scaling the database**. When we have an upscaled situation, we have to think about the increased number of database connections. It can go quite extreme in case of Serverless setup, as by default, the on-the-fly execution introduces a fresh DB connection each and every time - connection pooling is a good measure for this. Also, we have to investigate the most popular query patterns and create indexes to reduce latency and therefore increase DB availability. Introducing read replicas, or sharding are also great measures for preparing the database for massive load.
 
 The basis of our primary measures is a reliable, elastic cloud-based infrastructure. An important feature is cost control and monitoring, as scaling up heavily can also heavily increase the operation costs.
 
