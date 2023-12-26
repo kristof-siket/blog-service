@@ -35,7 +35,7 @@ async function main() {
     const user = await prisma.blog.create({
       data: blog,
     })
-    console.log(`Created user with id: ${user.id}`)
+    console.log(`Created blog with id: ${user.id}`)
   }
   console.log(`Seeding finished.`)
 }
