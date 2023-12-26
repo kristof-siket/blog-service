@@ -1,7 +1,7 @@
 {
   "name": "typescript-graphql",
   "scripts": {
-    "dev": "ts-node-dev --no-notify --respawn --transpile-only src/server"
+    "dev": "ts-node-dev  --no-notify --respawn --transpile-only src/core/server"
   },
   "prettier": {
     "semi": false,
@@ -9,11 +9,11 @@
     "trailingComma": "all"
   },
   "dependencies": {
+    "@apollo/server": "^4.9.5",
     "@prisma/client": "^5.7.1",
     "gql-tag": "^1.0.1",
     "graphql": "16.8.1",
-    "graphql-scalars": "1.22.4",
-    "graphql-yoga": "5.0.1"
+    "graphql-scalars": "1.22.4"
   },
   "devDependencies": {
     "@types/node": "20.10.3",

@@ -1,4 +1,4 @@
-import { createSchema } from 'graphql-yoga'
+import { buildSubgraphSchema } from '@apollo/subgraph'
 import { DateTimeResolver } from 'graphql-scalars'
 import { Context } from './context'
 import gql from 'gql-tag'
@@ -25,6 +25,12 @@ export const typeDefs = gql`
     title: String
   }
 
+  input BlogCreateInput {
+    slug: String!
+    name: String!
+    posts: [PostCreateInput!]
+  }
+
   input BlogByIdInput {
     id: String!
   }
@@ -49,32 +55,35 @@ export const typeDefs = gql`
 
 export const resolvers = {
   Query: {
-    postById: (_parent, args: { id: string }, context: Context) => {
+    postById: (_parent: any, args: { id: string }, context: Context) => {
       return context.prisma.post.findUnique({
         where: { id: args.id || undefined },
       })
     },
-    blogById: (_parent, args: { id: string }, context: Context) => {
+    blogById: (_parent: any, args: { id: string }, context: Context) => {
       return context.prisma.blog.findUnique({
         where: { id: args.id || undefined },
       })
     },
-    blogBySlug: (_parent, args: { slug: string }, context: Context) => {
+    blogBySlug: (_parent: any, args: { slug: string }, context: Context) => {
       return context.prisma.blog.findUnique({
         where: { slug: args.slug || undefined },
       })
     },
   },
   Mutation: {
-    createBlog: (_parent, args: { data: { slug: string; name: string } }, context: Context) => {
+    createBlog: (_parent: any, args: { data: BlogCreateInput }, context: Context) => {
       return context.prisma.blog.create({
         data: {
           slug: args.data.slug,
           name: args.data.name,
+          posts: {
+            create: args.data.posts,
+          },
         },
       })
     },
-    createPost: (_parent, args: { data: PostCreateInput; blogId: string }, context: Context) => {
+    createPost: (_parent: any, args: { data: PostCreateInput; blogId: string }, context: Context) => {
       return context.prisma.post.create({
         data: {
           title: args.data.title,
@@ -85,7 +94,7 @@ export const resolvers = {
     },
   },
   Blog: {
-    posts: (parent, _args, context: Context) => {
+    posts: (parent: any, _args: never, context: Context) => {
       // .posts() to avoid n+1
       return context.prisma.blog.findUnique({ where: { id: parent.id || undefined } }).posts()
     },
@@ -98,7 +107,13 @@ interface PostCreateInput {
   title?: string
 }
 
-export const schema = createSchema({
+interface BlogCreateInput {
+  slug: string
+  name: string
+  posts?: PostCreateInput[]
+}
+
+export const schema = {
   typeDefs,
   resolvers,
-})
+}
