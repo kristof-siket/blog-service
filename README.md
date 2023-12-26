@@ -29,4 +29,56 @@ Last but not least, Prisma, as the best ORM I know for Node.js, ensures type saf
 2. What were some of the trade-offs you made when building this application? Why
    were these acceptable trade-offs?
 
-One of them is choosing GraphQL, which has a couple of drawbacks, such as its extra complexity,
+One of them is choosing GraphQL, which has a couple of drawbacks, such as its extra complexity, the fact that it doesn't leverage HTTP features well. I think it is acceptabe because the above mentioned gains overshadow the painpoints, plus the app is built in a way that we could switch to another API architecture type by simply changing the API layer (stuff in the `services` folder would be nicely usable to back RESTful routes as well).
+
+Another tradeoff was going with ORM instead of native queries or some more lightweight solution. In my opinion, in case of such a system, using native queries would be a no-go - the level of query optimization that I can reach with Prisma is more than enough for the use cases listed in the requirements. Prisma comes with the drawback that it limits the usable DBs to the supported ones only - which are the most widely used databases, so we would probably anyway choose one of those. Again, its benefits overshadow its drawbacks, so the tradeoff is acceptable.
+
+3. Given more time, what improvements or optimizations would you want to add?
+   When would you add them?
+
+Here I have many things to say, so I open another level of listing.
+
+- Local DevEx / Continuous Development features:
+  The local development setup is quite laggy at the moment. For example, I didn't use Prisma Migrate - in my opinion, it is quite an important piece of the toolchain. Also, there is no command that starts a proper development environment without dependencies (for `dev`, I need a running database). The docker-based setup is also quite half-ready. Additionally, a development environment for a team seeking high quality would include static code analysis, CI/CD pipeline with automated test execution, GraphQL schema checks and what not. _When_: I would add these incrementally as the project is growing, but most of the mentioned things should be configured at an early stage of the project.
+
+- Auth, Access Control:
+  Currently there is no authentication and access control defined for this service. As I see it, receiving and decoding an access token shouldn't happen in this microservice. It could be done by a serparate service that is responsible for user management, or as part of our API Gateway (in case of Apollo, it could be a Rhai script or an external co-processor). The service itself should be responsible for handling its own permission scopes, so it should indeed know what are the capabilities of the user making the given request. _When_: this should be done before publishing the service to prod.
+
+- Rate limitation:
+  This could probably be done outside of this service, but GraphQL implies some extra risks here as well - without proper operation limits, the one malicious user can overload the server even with a single request (by a too long or too deep one). Rules for this can be configured at the Apollo Router's config (the Gateway we would put the subgraphs behind), but Cloudflare also offers a similar service.
+
+- Nexus:
+  I've honestly never used Nexus for the schema definitions yet, but I think it would be a nice improvement because of its extra type safety (and I also think using actual code is better than any form of string, even if the IDE extensions make it readable).
+
+- More queries, mutations, pagination, filtering, etc:
+  The current API basically implements the requirements from the specification, but APIs should be a bit more general-purpose. To support this, it would be nice to implement all the required CRUD operations (Update, Delete), convenience features such as pagination, sorting and filtering.
+
+4. What would you need to do to make this application scale to hundreds of thousands of users?
+
+I would like to approach this topic from two separate angles: primary and secondary measures.
+
+The primary measures are around the direct scalability of this service itself. So, given some hundreds of thousands of users, assuming that all of them are active and all of their requests trigger actual data fetches, the service should still operate efficiently.
+
+To achieve this, we need to _deploy it in a scaleable way_. As Node.js is single-threaded, our option is horizontal scaling, which can be done several ways
+
+- Using PM2 or other process managers, adapt the amount of processes based on the demand
+- Use K8s, which can easily be configured for autoscaling, creating as many pods as required dynamically.
+- Go Serverless, and deploy this service as a function.
+
+Which option is the best? It highly depends on the requirements and other details of our solution. For example, with the imagined setup with Apollo Router and more subgraphs, Kubernetes is quite handy as we can configure the networking between the services to the lowest possible latency. But of course, it is also possible to implement all subgraphs as separate function deployments.
+
+Besides scaling the app, we should also primarily deal with scaling the database. When we have an upscaled situation, we have to think about the increased number of database connections. It can go quite extreme in case of Serverless setup, as by default, the on-the-fly execution introduces a fresh DB connection each and every time - connection pooling is a good measure for this. Also, we have to investigate the most popular query patterns and create indexes to reduce latency and therefore increase DB availability. Introducing read replicas, or sharding are also great measures for preparing the database for massive load.
+
+The basis of our primary measures is a reliable, elastic cloud-based infrastructure. An important feature is cost control and monitoring, as scaling up heavily can also heavily increase the operation costs.
+
+The secondary measure is caching, which can drastically increase our systems loadability. For example, if we support our primary database with a Redis cache, we go less times to the DB, and therefore the DB's upscaling can be postponed. Also, if we put our service into a real blog's context, it might actually be a good idea to use SSG (static site generation) and cache our generated contents on a CDN - which would ensure that most of the page loads doesn't even need to reach our backend systems.
+
+The reason why I'm mentioning caching as a secondary measure is that the one should never design a system that uses caching as the main mechanism to deal with increased load - cache is there to support and speed things up, but they are not the main sources of truth.
+
+5. How would you change the architecture to allow for models that are stored in different databases? E.g. posts are stored in Cassandra and blogs are stored in Postgres.
+
+One popular rule-of-thumb is to have one database per service, which of course is not a "law", but definitely something to consider. If we go this way, we implement a completely different microservice for posts - in our current architecture, the users would still be able to easily query to Posts of a Blog using the federated graph.
+
+Another option is making this service manage the two databases. It can have good reasons - Posts and Blogs are quite close to each other in terms of domain, and they should probably be taken care by the same dev team. In this case, our data access layer has to deal with the two data sources. We can orchestrate "manually" between the two data sources in our `services`.
+
+One thing that Apollo Federation doesn't nicely solve is Saga Orchestration, so if the success of Blog Creation would depend on the success of related Post creation, and Posts would be created in a separate service, we might have a bit harder time implementing the rollback mechanism to avoid data inconsistency.
