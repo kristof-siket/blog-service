@@ -1,11 +1,13 @@
 import { context } from './context'
-import { schema } from './schema'
+import { resolvers, typeDefs } from './schema'
 import { ApolloServer } from '@apollo/server'
 import { startStandaloneServer } from '@apollo/server/standalone';
+import { buildSubgraphSchema } from '@apollo/subgraph'
 
 // Create Apollo Server
 const server = new ApolloServer({
-  ...schema,
+  // We are building a federated subgraph, as this might be part of a larger graph
+  schema: buildSubgraphSchema({ typeDefs, resolvers }),
 })
 
 // Start Apollo Server

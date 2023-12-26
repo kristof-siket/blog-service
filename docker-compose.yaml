@@ -1,0 +1,46 @@
+# TODO
+# - Service 1: Node.js app (build and run this graphql api)
+# - Service 2: Postgres (database)
+# - Service 3: Apollo Router (Federated API Gateway)
+
+# There might also be internal steps such as generating Prisma Client, migrating schema etc.
+
+# Current version:
+services:
+  db:
+    image: postgres
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: blog_db
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  init:
+    image: blog-post-service-blog-service:latest
+    command: npx prisma db push && npx prisma db seed
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/blog_db
+    depends_on:
+      - db
+      - blog-service
+
+  blog-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 4000:4000
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/blog_db
+    depends_on:
+      db:
+        condition: service_healthy
+  # todo router service
+volumes:
+  pgdata:

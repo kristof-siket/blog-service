@@ -1,13 +1,18 @@
-import { buildSubgraphSchema } from '@apollo/subgraph'
 import { DateTimeResolver } from 'graphql-scalars'
-import { Context } from './context'
-import gql from 'gql-tag'
+import gql from 'graphql-tag'
 import { BlogCreateInput, PostCreateInput } from './types'
 import { createBlog, createPost, getBlogById, getBlogBySlug, getPostById, getPostsOfBlog } from '../services'
 
 
+/**
+ * TODOS
+ * - Pagination & Sorting
+ * - Return all posts that contain a specific piece of text (leverage full-text search)
+ * - Nexus
+ */
+
 export const typeDefs = gql`
-  type Post {
+  type Post @key(fields: "id") {
     id: String!
     content: String!
     createdAt: DateTime!
@@ -16,7 +21,7 @@ export const typeDefs = gql`
     title: String
   }
 
-  type Blog {
+  type Blog @key(fields: "id") {
     id: String!
     slug: String!
     name: String!
@@ -56,18 +61,23 @@ export const typeDefs = gql`
   scalar DateTime
 `
 
+// TODO: Add real types if possible for _parent
 export const resolvers = {
   Query: {
-    postById: (_parent: any, args: { id: string }, context: Context) => getPostById(args.id, context.prisma),
-    blogById: (_parent: any, args: { id: string }, context: Context) => getBlogById(args.id, context.prisma),
-    blogBySlug: (_parent: any, args: { slug: string }, context: Context) => getBlogBySlug(args.slug, context.prisma),
+    postById: (_parent: any, args: { id: string }, context) => getPostById(args.id, context.prisma),
+    blogById: (_parent: any, args: { id: string }, context) => getBlogById(args.id, context.prisma),
+    blogBySlug: (_parent: any, args: { slug: string }, context) => getBlogBySlug(args.slug, context.prisma),
   },
   Mutation: {
-    createBlog: (_parent: any, args: { data: BlogCreateInput }, context: Context) => createBlog(args.data, context.prisma),
-    createPost: (_parent: any, args: { data: PostCreateInput; blogId: string }, context: Context) => createPost(args.data, args.blogId, context.prisma),
+    createBlog: (_parent: any, args: { data: BlogCreateInput }, context) => createBlog(args.data, context.prisma),
+    createPost: (_parent: any, args: { data: PostCreateInput; blogId: string }, context) => createPost(args.data, args.blogId, context.prisma),
   },
   Blog: {
-    posts: (parent: any, _args: never, context: Context) => getPostsOfBlog(parent.id, context.prisma),
+    __resolveReference: (parent: any, _args, context) => getBlogById(parent.id, context.prisma),
+    posts: (parent: any, _args, context) => getPostsOfBlog(parent.id, context.prisma),
+  },
+  Post: {
+    __resolveReference: (parent: any, _args, context) => getPostById(parent.id, context.prisma),
   },
   DateTime: DateTimeResolver,
 }

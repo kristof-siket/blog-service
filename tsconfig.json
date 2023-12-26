@@ -2,9 +2,11 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
+    "module": "commonjs",
     "lib": ["esnext"],
-    "strict": true, 
-    "noImplicitAny": false
+    "strict": true,
+    "noImplicitAny": false,
+    "esModuleInterop": true
   },
   "include": ["src/**/*"]
 }

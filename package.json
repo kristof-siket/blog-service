@@ -1,7 +1,8 @@
 {
   "name": "typescript-graphql",
   "scripts": {
-    "dev": "ts-node-dev  --no-notify --respawn --transpile-only src/core/server"
+    "dev": "ts-node-dev  --no-notify --respawn --transpile-only src/core/server",
+    "build": "tsc"
   },
   "prettier": {
     "semi": false,
@@ -10,10 +11,11 @@
   },
   "dependencies": {
     "@apollo/server": "^4.9.5",
+    "@apollo/subgraph": "^2.6.2",
     "@prisma/client": "^5.7.1",
-    "gql-tag": "^1.0.1",
     "graphql": "16.8.1",
-    "graphql-scalars": "1.22.4"
+    "graphql-scalars": "1.22.4",
+    "graphql-tag": "^2.12.6"
   },
   "devDependencies": {
     "@types/node": "20.10.3",

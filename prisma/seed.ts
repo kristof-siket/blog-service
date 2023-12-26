@@ -2,6 +2,7 @@ import { PrismaClient, Prisma } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
+// TODO: it would be a bit better with upsert(). And/Or using a faker library.
 const blogData: Prisma.BlogCreateInput[] = [
   {
     slug: 'my-blog',
@@ -32,10 +33,10 @@ const blogData: Prisma.BlogCreateInput[] = [
 async function main() {
   console.log(`Start seeding ...`)
   for (const blog of blogData) {
-    const user = await prisma.blog.create({
+    const newBlog = await prisma.blog.create({
       data: blog,
     })
-    console.log(`Created blog with id: ${user.id}`)
+    console.log(`Created blog with id: ${newBlog.id}`)
   }
   console.log(`Seeding finished.`)
 }
