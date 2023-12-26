@@ -2,6 +2,9 @@ import { buildSubgraphSchema } from '@apollo/subgraph'
 import { DateTimeResolver } from 'graphql-scalars'
 import { Context } from './context'
 import gql from 'gql-tag'
+import { BlogCreateInput, PostCreateInput } from './types'
+import { createBlog, createPost, getBlogById, getBlogBySlug, getPostById, getPostsOfBlog } from '../services'
+
 
 export const typeDefs = gql`
   type Post {
@@ -55,62 +58,18 @@ export const typeDefs = gql`
 
 export const resolvers = {
   Query: {
-    postById: (_parent: any, args: { id: string }, context: Context) => {
-      return context.prisma.post.findUnique({
-        where: { id: args.id || undefined },
-      })
-    },
-    blogById: (_parent: any, args: { id: string }, context: Context) => {
-      return context.prisma.blog.findUnique({
-        where: { id: args.id || undefined },
-      })
-    },
-    blogBySlug: (_parent: any, args: { slug: string }, context: Context) => {
-      return context.prisma.blog.findUnique({
-        where: { slug: args.slug || undefined },
-      })
-    },
+    postById: (_parent: any, args: { id: string }, context: Context) => getPostById(args.id, context.prisma),
+    blogById: (_parent: any, args: { id: string }, context: Context) => getBlogById(args.id, context.prisma),
+    blogBySlug: (_parent: any, args: { slug: string }, context: Context) => getBlogBySlug(args.slug, context.prisma),
   },
   Mutation: {
-    createBlog: (_parent: any, args: { data: BlogCreateInput }, context: Context) => {
-      return context.prisma.blog.create({
-        data: {
-          slug: args.data.slug,
-          name: args.data.name,
-          posts: {
-            create: args.data.posts,
-          },
-        },
-      })
-    },
-    createPost: (_parent: any, args: { data: PostCreateInput; blogId: string }, context: Context) => {
-      return context.prisma.post.create({
-        data: {
-          title: args.data.title,
-          content: args.data.content,
-          blog: { connect: { id: args.blogId } },
-        },
-      })
-    },
+    createBlog: (_parent: any, args: { data: BlogCreateInput }, context: Context) => createBlog(args.data, context.prisma),
+    createPost: (_parent: any, args: { data: PostCreateInput; blogId: string }, context: Context) => createPost(args.data, args.blogId, context.prisma),
   },
   Blog: {
-    posts: (parent: any, _args: never, context: Context) => {
-      // .posts() to avoid n+1
-      return context.prisma.blog.findUnique({ where: { id: parent.id || undefined } }).posts()
-    },
+    posts: (parent: any, _args: never, context: Context) => getPostsOfBlog(parent.id, context.prisma),
   },
   DateTime: DateTimeResolver,
-}
-
-interface PostCreateInput {
-  content: string
-  title?: string
-}
-
-interface BlogCreateInput {
-  slug: string
-  name: string
-  posts?: PostCreateInput[]
 }
 
 export const schema = {
