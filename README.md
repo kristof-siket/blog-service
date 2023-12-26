@@ -16,7 +16,7 @@ You can also opt in for the Docker-based setup (this is a bit unfinished yet). Y
 
 Here I'm answering some questions regarding the architectural decisions, tradeoffs, and possible improvements of the application.
 
-1. What were some of the reasons you chose the technology stack that you did?
+## What were some of the reasons you chose the technology stack that you did?
 
 As I stated, the main tech stack is Node.js with TS, Apollo Server and Prisma. In my opinion, Node.js is a good choice for building microservices. Its event loop mechanism ensures high performance when serving many requests simultaneously, and it is easy to horizontally scale (e.g. with pm2 processes, K8s pods, deploying as serverless function, etc).
 
@@ -26,8 +26,7 @@ Apollo, and GraphQL in general, is a good choice for this task because the funct
 
 Last but not least, Prisma, as the best ORM I know for Node.js, ensures type safety and flexibility in terms of data sources (see Bonus requirement, if I understand it correctly, by using an ORM, we are already quite good with switching to another data source). It can also solve the infamous N+1 problem that GraphQL introduces when querying related data, so it generally works nicely as the "backend" of a GraphQL API.
 
-2. What were some of the trade-offs you made when building this application? Why
-   were these acceptable trade-offs?
+## What were some of the trade-offs you made when building this application? Why were these acceptable trade-offs?
 
 One of them is choosing GraphQL, which has a couple of drawbacks, such as its extra complexity, the fact that it doesn't leverage HTTP features well. I think it is acceptabe because the above mentioned gains overshadow the painpoints, plus the app is built in a way that we could switch to another API architecture type by simply changing the API layer (stuff in the `services` folder would be nicely usable to back RESTful routes as well).
 
@@ -74,7 +73,7 @@ The secondary measure is caching, which can drastically increase our systems loa
 
 The reason why I'm mentioning caching as a secondary measure is that the one should never design a system that uses caching as the main mechanism to deal with increased load - cache is there to support and speed things up, but they are not the main sources of truth.
 
-5. How would you change the architecture to allow for models that are stored in different databases? E.g. posts are stored in Cassandra and blogs are stored in Postgres.
+## How would you change the architecture to allow for models that are stored in different databases? E.g. posts are stored in Cassandra and blogs are stored in Postgres.
 
 One popular rule-of-thumb is to have one database per service, which of course is not a "law", but definitely something to consider. If we go this way, we implement a completely different microservice for posts - in our current architecture, the users would still be able to easily query to Posts of a Blog using the federated graph.
 
