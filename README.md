@@ -39,6 +39,9 @@ Here I have many things to say, so I open another level of listing.
 - Local DevEx / Continuous Development features:
   The local development setup is quite laggy at the moment. For example, I didn't use Prisma Migrate - in my opinion, it is quite an important piece of the toolchain. Also, there is no command that starts a proper development environment without dependencies (for `dev`, I need a running database). The docker-based setup is also quite half-ready. Additionally, a development environment for a team seeking high quality would include static code analysis, CI/CD pipeline with automated test execution, GraphQL schema checks and what not. **When**: I would add these incrementally as the project is growing, but most of the mentioned things should be configured at an early stage of the project.
 
+- Error handling, logging:
+  Currently I have no proper error handling and logging added to this service. As for logging, I would add something like Pino or Winston (something that can be configured with the chosen cloud provider's log tracker). For error handling, I would use GraphQL's standard way (introduce error codes), would maybe also add Sentry.io to have better overview of production errors.
+
 - Auth, Access Control:
   Currently there is no authentication and access control defined for this service. As I see it, receiving and decoding an access token shouldn't happen in this microservice. It could be done by a serparate service that is responsible for user management, or as part of our API Gateway (in case of Apollo, it could be a Rhai script or an external co-processor). The service itself should be responsible for handling its own permission scopes, so it should indeed know what are the capabilities of the user making the given request. **When**: this should be done before publishing the service to prod.
 
