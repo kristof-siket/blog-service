@@ -93,6 +93,11 @@ export const resolvers = {
   DateTime: DateTimeResolver,
 }
 
+interface PostCreateInput {
+  content: string
+  title?: string
+}
+
 export const schema = createSchema({
   typeDefs,
   resolvers,
