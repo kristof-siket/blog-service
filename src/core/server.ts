@@ -1,3 +1,4 @@
+import service from '../service.mjs'
 import { context } from './context'
 import { resolvers, typeDefs } from './schema'
 import { ApolloServer } from '@apollo/server'
@@ -10,11 +11,12 @@ const server = new ApolloServer({
   schema: buildSubgraphSchema({ typeDefs, resolvers }),
 })
 
-// Start Apollo Server
+// Start Apollo Server on the service's reserved port, on every interface
 startStandaloneServer(server, {
   context: async () => context,
   listen: {
-    port: parseInt(process.env.PORT || '4000'),
+    port: service.port(),
+    host: '0.0.0.0',
   },
 }).then(({ url }) => {
   console.log(`🚀  Server ready at ${url}`);

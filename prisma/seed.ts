@@ -1,40 +1,44 @@
-import { PrismaClient, Prisma } from '@prisma/client'
+import postgres from '@prisma/orm-postgres/runtime'
+import { contractFromJson } from '@prisma/orm-postgres/static'
+import type { Contract } from '../src/prisma/contract'
+import contractJson from '../src/prisma/contract.json'
 
-const prisma = new PrismaClient()
+const db = postgres({
+  contract: contractFromJson<Contract>(contractJson),
+  url: process.env['DATABASE_URL']!,
+})
 
 // TODO: it would be a bit better with upsert(). And/Or using a faker library.
-const blogData: Prisma.BlogCreateInput[] = [
+const blogData = [
   {
     slug: 'my-blog',
     name: 'My Blog',
-    posts: {
-      create: [
-        {
-          title: 'My first post',
-          content: 'Hello world!',
-        },
-      ],
-    },
+    posts: [
+      {
+        title: 'My first post',
+        content: 'Hello world!',
+      },
+    ],
   },
   {
     slug: 'my-second-blog',
     name: 'My second blog',
-    posts: {
-      create: [
-        {
-          title: 'My second post',
-          content: 'Hello world again!',
-        },
-      ],
-    },
+    posts: [
+      {
+        title: 'My second post',
+        content: 'Hello world again!',
+      },
+    ],
   },
 ]
 
 async function main() {
   console.log(`Start seeding ...`)
   for (const blog of blogData) {
-    const newBlog = await prisma.blog.create({
-      data: blog,
+    const newBlog = await db.orm.public.Blog.create({
+      slug: blog.slug,
+      name: blog.name,
+      posts: (p) => p.create(blog.posts),
     })
     console.log(`Created blog with id: ${newBlog.id}`)
   }
@@ -43,10 +47,10 @@ async function main() {
 
 main()
   .then(async () => {
-    await prisma.$disconnect()
+    await db.close()
   })
   .catch(async (e) => {
     console.error(e)
-    await prisma.$disconnect()
+    await db.close()
     process.exit(1)
   })
