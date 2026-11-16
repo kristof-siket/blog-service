@@ -1,4 +1,5 @@
 node_modules/
 src/generated/
 *.env*
-*.db
+*.db.prisma-composer/
+.alchemy/
